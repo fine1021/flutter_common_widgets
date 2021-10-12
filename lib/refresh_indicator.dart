@@ -162,7 +162,7 @@ class RefreshIndicator extends StatefulWidget {
   final RefreshCallback onRefresh;
 
   /// The progress indicator's foreground color. The current theme's
-  /// [ThemeData.accentColor] by default.
+  /// [ColorScheme.primary] by default.
   final Color? color;
 
   /// The progress indicator's background color. The current theme's
@@ -255,8 +255,8 @@ class RefreshIndicatorState extends State<RefreshIndicator>
     final ThemeData theme = Theme.of(context);
     _valueColor = _positionController.drive(
       ColorTween(
-        begin: (widget.color ?? theme.accentColor).withOpacity(0.0),
-        end: (widget.color ?? theme.accentColor).withOpacity(1.0),
+        begin: (widget.color ?? theme.colorScheme.primary).withOpacity(0.0),
+        end: (widget.color ?? theme.colorScheme.primary).withOpacity(1.0),
       ).chain(
           CurveTween(curve: const Interval(0.0, 1.0 / _kDragSizeFactorLimit))),
     );

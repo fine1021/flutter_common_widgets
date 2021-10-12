@@ -1,10 +1,10 @@
 name: flutter_common_widgets
 description: Ivylove Common Widgets
-version: 0.0.1
+version: 2.5.0
 
 environment:
-  sdk: ">=2.12.0 <3.0.0"
-  flutter: ">=2.0.0"
+  sdk: ">=2.14.0 <3.0.0"
+  flutter: ">=2.5.0"
 
 dependencies:
   flutter:

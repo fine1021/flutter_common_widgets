@@ -236,13 +236,19 @@ class InterceptLengthLimitingTextInputFormatter extends TextInputFormatter {
       iterator.expandNext(maxLength);
     }
     final String truncated = iterator.current;
+
     return TextEditingValue(
       text: truncated,
       selection: value.selection.copyWith(
         baseOffset: math.min(value.selection.start, truncated.length),
         extentOffset: math.min(value.selection.end, truncated.length),
       ),
-      composing: TextRange.empty,
+      composing: !value.composing.isCollapsed && truncated.length > value.composing.start
+          ? TextRange(
+        start: value.composing.start,
+        end: math.min(value.composing.end, truncated.length),
+      )
+          : TextRange.empty,
     );
   }
 

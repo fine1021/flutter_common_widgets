@@ -76,15 +76,16 @@ class CustomLinearProgressIndicator extends ProgressIndicator {
   _LinearProgressIndicatorState createState() =>
       _LinearProgressIndicatorState();
 
-  Color _getBackgroundColor(BuildContext context) =>
-      backgroundColor ?? Theme.of(context).colorScheme.background;
-
   Color _getValueColor(BuildContext context) =>
-      valueColor?.value ?? color ?? Theme.of(context).colorScheme.primary;
+      valueColor?.value ??
+      color ??
+      ProgressIndicatorTheme.of(context).color ??
+      Theme.of(context).colorScheme.primary;
 
   Color _getSecondaryValueColor(BuildContext context) =>
       secondaryValueColor?.value ??
       secondaryColor ??
+      ProgressIndicatorTheme.of(context).color ??
       Theme.of(context).colorScheme.primary;
 
   @override
@@ -141,21 +142,27 @@ class _LinearProgressIndicatorState extends State<CustomLinearProgressIndicator>
 
   Widget _buildIndicator(BuildContext context, double animationValue,
       TextDirection textDirection) {
+    final ProgressIndicatorThemeData indicatorTheme =
+        ProgressIndicatorTheme.of(context);
+    final Color trackColor = widget.backgroundColor ??
+        indicatorTheme.linearTrackColor ??
+        Theme.of(context).colorScheme.background;
+    final double minHeight =
+        widget.minHeight ?? indicatorTheme.linearMinHeight ?? 4.0;
+
     return widget._buildSemanticsWrapper(
       context: context,
       child: Container(
         constraints: BoxConstraints(
           minWidth: double.infinity,
-          minHeight: widget.minHeight ?? 4.0,
+          minHeight: minHeight,
         ),
         child: CustomPaint(
           painter: _LinearProgressIndicatorPainter(
-            backgroundColor: widget._getBackgroundColor(context),
+            backgroundColor: trackColor,
             valueColor: widget._getValueColor(context),
-            value: widget.value,
-            // may be null
-            animationValue: animationValue,
-            // ignored if widget.value is not null
+            value: widget.value, // may be null
+            animationValue: animationValue, // ignored if widget.value is not null
             textDirection: textDirection,
             secondaryValue: widget.secondaryValue,
             secondaryValueColor: widget._getSecondaryValueColor(context),
