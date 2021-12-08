@@ -7,6 +7,7 @@ class CustomTabBar extends TabBar {
     required List<Widget> tabs,
     TabController? controller,
     bool isScrollable = false,
+    EdgeInsetsGeometry? padding,
     Color? indicatorColor,
     bool automaticIndicatorColorAdjustment = true,
     double indicatorWeight = 2.0,
@@ -30,6 +31,7 @@ class CustomTabBar extends TabBar {
           tabs: tabs,
           controller: controller,
           isScrollable: isScrollable,
+          padding: padding,
           indicatorColor: indicatorColor,
           automaticIndicatorColorAdjustment: automaticIndicatorColorAdjustment,
           indicatorWeight: indicatorWeight,
@@ -53,10 +55,11 @@ class CustomTabBar extends TabBar {
 
   @override
   Size get preferredSize {
-    if (customHeight == null) {
+    var height = customHeight;
+    if (height == null) {
       return super.preferredSize;
     } else {
-      return Size.fromHeight(customHeight! + indicatorWeight);
+      return Size.fromHeight(height + indicatorWeight);
     }
   }
 }
