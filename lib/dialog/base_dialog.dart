@@ -1,8 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-import 'dialog_behavior.dart';
-
 class _DialogWrapper extends StatefulWidget {
   final State<_DialogWrapper> state;
 
@@ -14,7 +12,7 @@ class _DialogWrapper extends StatefulWidget {
   }
 }
 
-abstract class BaseDialog extends State<_DialogWrapper> with DialogBehavior {
+abstract class BaseDialog extends State<_DialogWrapper> {
   /// 当点击返回按钮，是否取消对话框
   final bool cancelable;
 
@@ -41,7 +39,6 @@ abstract class BaseDialog extends State<_DialogWrapper> with DialogBehavior {
   bool _isShowing = false;
   ModalRoute<dynamic>? _route;
 
-  @override
   bool get isShowing => _isShowing;
 
   @override
@@ -101,7 +98,6 @@ abstract class BaseDialog extends State<_DialogWrapper> with DialogBehavior {
     return objectRuntimeType(this, 'BaseDialog');
   }
 
-  @override
   Future<T?> show<T>(
     BuildContext context, {
     Color? barrierColor,
@@ -110,6 +106,7 @@ abstract class BaseDialog extends State<_DialogWrapper> with DialogBehavior {
     Duration transitionDuration = const Duration(milliseconds: 150),
     RouteTransitionsBuilder? transitionBuilder,
     bool useRootNavigator = true,
+    RouteSettings? routeSettings,
   }) {
     _isShowing = true;
     WidgetBuilder builder = (buildContext) => _DialogWrapper(state: this);
@@ -140,11 +137,10 @@ abstract class BaseDialog extends State<_DialogWrapper> with DialogBehavior {
       transitionDuration: transitionDuration,
       transitionBuilder: transitionBuilder ?? _buildMaterialDialogTransitions,
       useRootNavigator: useRootNavigator,
-      routeSettings: RouteSettings(name: getRouteName()),
+      routeSettings: routeSettings ?? RouteSettings(name: getRouteName()),
     );
   }
 
-  @override
   void dismiss<T extends Object>([T? result]) {
     if (_isShowing) {
       if (_canDismissImmediately()) {

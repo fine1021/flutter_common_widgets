@@ -118,7 +118,7 @@ class RefreshIndicator extends StatefulWidget {
     this.notificationPredicate = defaultScrollNotificationPredicate,
     this.semanticsLabel,
     this.semanticsValue,
-    this.strokeWidth = 2.0,
+    this.strokeWidth = RefreshProgressIndicator.defaultStrokeWidth,
     this.triggerMode = RefreshIndicatorTriggerMode.onEdge,
     this.reverse = false,
   })  : assert(child != null),
@@ -564,8 +564,8 @@ class RefreshIndicatorState extends State<RefreshIndicator>
         child,
         if (_mode != null)
           Positioned(
-            top: _isIndicatorAtTop! ? 0.0 : null,
-            bottom: !_isIndicatorAtTop! ? 0.0 : null,
+            top: _isIndicatorAtTop! ? widget.edgeOffset : null,
+            bottom: !_isIndicatorAtTop! ? widget.edgeOffset : null,
             left: 0.0,
             right: 0.0,
             child: SizeTransition(

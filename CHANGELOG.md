@@ -1,3 +1,6 @@
+## 2.8.0
+1, Adaptation Flutter 2.8.0
+
 ## 2.5.1
 1, Add params
 

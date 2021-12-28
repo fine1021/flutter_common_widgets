@@ -35,6 +35,17 @@ class CustomLinearProgressIndicator extends ProgressIndicator {
           semanticsValue: semanticsValue,
         );
 
+  /// {@template flutter.material.LinearProgressIndicator.trackColor}
+  /// Color of the track being filled by the linear indicator.
+  ///
+  /// If [LinearProgressIndicator.backgroundColor] is null then the
+  /// ambient [ProgressIndicatorThemeData.linearTrackColor] will be used.
+  /// If that is null, then the ambient theme's [ColorScheme.background]
+  /// will be used to draw the track.
+  /// {@endtemplate}
+  @override
+  Color? get backgroundColor => super.backgroundColor;
+
   /// The minimum height of the line used to draw the indicator.
   ///
   /// This defaults to 4dp.

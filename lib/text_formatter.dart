@@ -193,6 +193,7 @@ class InterceptLengthLimitingTextInputFormatter extends TextInputFormatter {
   InterceptLengthLimitingTextInputFormatter(
     this.maxLength, {
     this.onIntercept,
+    this.maxLengthEnforcement,
   }) : assert(maxLength == null || maxLength == -1 || maxLength > 0);
 
   /// The limit on the number of characters (i.e. Unicode scalar values) this formatter
@@ -222,13 +223,58 @@ class InterceptLengthLimitingTextInputFormatter extends TextInputFormatter {
   /// characters.
   final int maxLength;
 
+  /// Determines how the [maxLength] limit should be enforced.
+  ///
+  /// Defaults to [MaxLengthEnforcement.enforced].
+  ///
+  /// {@macro flutter.services.textFormatter.maxLengthEnforcement}
+  final MaxLengthEnforcement? maxLengthEnforcement;
+
   final InterceptValue<TextEditingValue>? onIntercept;
 
-  /// Truncate the given TextEditingValue to maxLength characters.
+  /// Returns a [MaxLengthEnforcement] that follows the specified [platform]'s
+  /// convention.
+  ///
+  /// {@template flutter.services.textFormatter.effectiveMaxLengthEnforcement}
+  /// ### Platform specific behaviors
+  ///
+  /// Different platforms follow different behaviors by default, according to
+  /// their native behavior.
+  ///  * Android, Windows: [MaxLengthEnforcement.enforced]. The native behavior
+  ///    of these platforms is enforced. The composing will be handled by the
+  ///    IME while users are entering CJK characters.
+  ///  * iOS: [MaxLengthEnforcement.truncateAfterCompositionEnds]. iOS has no
+  ///    default behavior and it requires users implement the behavior
+  ///    themselves. Allow the composition to exceed to avoid breaking CJK input.
+  ///  * Web, macOS, linux, fuchsia:
+  ///    [MaxLengthEnforcement.truncateAfterCompositionEnds]. These platforms
+  ///    allow the composition to exceed by default.
+  /// {@endtemplate}
+  static MaxLengthEnforcement getDefaultMaxLengthEnforcement([
+    TargetPlatform? platform,
+  ]) {
+    if (kIsWeb) {
+      return MaxLengthEnforcement.truncateAfterCompositionEnds;
+    } else {
+      switch (platform ?? defaultTargetPlatform) {
+        case TargetPlatform.android:
+        case TargetPlatform.windows:
+          return MaxLengthEnforcement.enforced;
+        case TargetPlatform.iOS:
+        case TargetPlatform.macOS:
+        case TargetPlatform.linux:
+        case TargetPlatform.fuchsia:
+          return MaxLengthEnforcement.truncateAfterCompositionEnds;
+      }
+    }
+  }
+
+  /// Truncate the given TextEditingValue to maxLength user-perceived
+  /// characters.
   ///
   /// See also:
   ///  * [Dart's characters package](https://pub.dev/packages/characters).
-  ///  * [Dart's documenetation on runes and grapheme clusters](https://dart.dev/guides/language/language-tour#runes-and-grapheme-clusters).
+  ///  * [Dart's documentation on runes and grapheme clusters](https://dart.dev/guides/language/language-tour#runes-and-grapheme-clusters).
   @visibleForTesting
   static TextEditingValue truncate(TextEditingValue value, int maxLength) {
     final CharacterRange iterator = CharacterRange(value.text);
@@ -254,25 +300,59 @@ class InterceptLengthLimitingTextInputFormatter extends TextInputFormatter {
 
   @override
   TextEditingValue formatEditUpdate(
-    TextEditingValue oldValue, // unused.
+    TextEditingValue oldValue,
     TextEditingValue newValue,
   ) {
-    if (maxLength != null &&
-        maxLength > 0 &&
-        newValue.text.characters.length > maxLength) {
-      // Intercept edit value if need
-      TextEditingValue? value = onIntercept?.call(newValue);
-      if (value != null && value.text.characters.length <= maxLength) {
-        return value;
-      }
-      // If already at the maximum and tried to enter even more, keep the old
-      // value.
-      if (oldValue.text.characters.length == maxLength) {
-        return oldValue;
-      }
-      return truncate(newValue, maxLength);
+    final int? maxLength = this.maxLength;
+
+    if (maxLength == null ||
+        maxLength == -1 ||
+        newValue.text.characters.length <= maxLength) {
+      return newValue;
     }
-    return newValue;
+
+    assert(maxLength > 0);
+
+    switch (maxLengthEnforcement ?? getDefaultMaxLengthEnforcement()) {
+      case MaxLengthEnforcement.none:
+        return newValue;
+      case MaxLengthEnforcement.enforced:
+        // If already at the maximum and tried to enter even more, and has no
+        // selection, keep the old value.
+        if (oldValue.text.characters.length == maxLength &&
+            oldValue.selection.isCollapsed) {
+          return oldValue;
+        }
+
+        TextEditingValue? value = onIntercept?.call(newValue);
+        if (value != null && value.text.characters.length <= maxLength) {
+          return value;
+        }
+
+        // Enforced to return a truncated value.
+        return truncate(newValue, maxLength);
+      case MaxLengthEnforcement.truncateAfterCompositionEnds:
+        // If already at the maximum and tried to enter even more, and the old
+        // value is not composing, keep the old value.
+        if (oldValue.text.characters.length == maxLength &&
+            !oldValue.composing.isValid) {
+          return oldValue;
+        }
+
+        // Temporarily exempt `newValue` from the maxLength limit if it has a
+        // composing text going and no enforcement to the composing value, until
+        // the composing is finished.
+        if (newValue.composing.isValid) {
+          return newValue;
+        }
+
+        TextEditingValue? value = onIntercept?.call(newValue);
+        if (value != null && value.text.characters.length <= maxLength) {
+          return value;
+        }
+
+        return truncate(newValue, maxLength);
+    }
   }
 }
 
