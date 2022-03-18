@@ -3,16 +3,23 @@ import 'package:flutter/material.dart';
 class OverScrollBehavior extends ScrollBehavior {
   final bool showLeading;
   final bool showTrailing;
+  final bool showScrollbar;
+  final ScrollbarBuilder? scrollbar;
 
   OverScrollBehavior({
     this.showLeading = false,
     this.showTrailing = false,
-  });
+    this.showScrollbar = false,
+    this.scrollbar,
+    AndroidOverscrollIndicator? androidOverscrollIndicator,
+  })  : _androidOverscrollIndicator = androidOverscrollIndicator,
+        super(androidOverscrollIndicator: androidOverscrollIndicator);
+
+  final AndroidOverscrollIndicator? _androidOverscrollIndicator;
 
   @override
-  TargetPlatform getPlatform(BuildContext context) {
-    return Theme.of(context).platform;
-  }
+  TargetPlatform getPlatform(BuildContext context) =>
+      Theme.of(context).platform;
 
   @override
   Widget buildScrollbar(
@@ -28,14 +35,29 @@ class OverScrollBehavior extends ScrollBehavior {
           case TargetPlatform.macOS:
           case TargetPlatform.windows:
             return Scrollbar(
-              child: child,
               controller: details.controller,
+              child: child,
             );
           case TargetPlatform.android:
           case TargetPlatform.fuchsia:
           case TargetPlatform.iOS:
-            return child;
+            return showScrollbar
+                ? _buildScrollbar(context, child, details)
+                : child;
         }
+    }
+  }
+
+  Widget _buildScrollbar(
+    BuildContext context,
+    Widget child,
+    ScrollableDetails details,
+  ) {
+    var scrollbar = this.scrollbar;
+    if (scrollbar != null) {
+      return scrollbar(context, child, details);
+    } else {
+      return Scrollbar(controller: details.controller, child: child);
     }
   }
 
@@ -44,6 +66,9 @@ class OverScrollBehavior extends ScrollBehavior {
       BuildContext context, Widget child, ScrollableDetails details) {
     // When modifying this function, consider modifying the implementation in
     // the base class as well.
+    final AndroidOverscrollIndicator indicator = _androidOverscrollIndicator ??
+        Theme.of(context).androidOverscrollIndicator ??
+        androidOverscrollIndicator;
     switch (getPlatform(context)) {
       case TargetPlatform.iOS:
       case TargetPlatform.linux:
@@ -51,14 +76,30 @@ class OverScrollBehavior extends ScrollBehavior {
       case TargetPlatform.windows:
         return child;
       case TargetPlatform.android:
+        switch (indicator) {
+          case AndroidOverscrollIndicator.stretch:
+            return StretchingOverscrollIndicator(
+              axisDirection: details.direction,
+              child: child,
+            );
+          case AndroidOverscrollIndicator.glow:
+            continue glow;
+        }
+      glow:
       case TargetPlatform.fuchsia:
         return GlowingOverscrollIndicator(
-          showLeading: showLeading,
-          showTrailing: showTrailing,
-          child: child,
           axisDirection: details.direction,
           color: Theme.of(context).colorScheme.secondary,
+          child: child,
+          showLeading: showLeading,
+          showTrailing: showTrailing,
         );
     }
   }
 }
+
+typedef ScrollbarBuilder = Widget Function(
+  BuildContext context,
+  Widget child,
+  ScrollableDetails details,
+);
